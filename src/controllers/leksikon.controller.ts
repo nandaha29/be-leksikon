@@ -113,30 +113,83 @@ export const getLeksikonAssets = async (req: Request, res: Response) => {
 };
 
 // POST /api/leksikons/:id/assets
+// export const addAssetToLeksikon = async (req: Request, res: Response) => {
+//   try {
+//     const leksikonId = Number(req.params.id);
+//     if (Number.isNaN(leksikonId)) return res.status(400).json({ message: 'Invalid leksikon ID' });
+
+//     const { assetId, assetRole } = req.body;
+//     const validated = createLeksikonAssetSchema.parse({ leksikonId, assetId, assetRole });
+
+//     const result = await leksikonService.addAssetToLeksikon(leksikonId, assetId, assetRole);
+//     return res.status(201).json(result);
+//   } catch (error) {
+//     if (error instanceof ZodError) {
+//       return res.status(400).json({ message: 'Validation failed', errors: error });
+//     }
+//     if ((error as any)?.code === 'LEKSIKON_NOT_FOUND') {
+//       return res.status(404).json({ message: 'Leksikon not found' });
+//     }
+//     if ((error as any)?.code === 'ASSET_NOT_FOUND') {
+//       return res.status(404).json({ message: 'Asset not found' });
+//     }
+//     console.error('Failed to add asset to leksikon:', error);
+//     return res.status(500).json({ message: 'Failed to add asset', details: error });
+//   }
+// };
+
+// POST /api/leksikons/:id/assets
 export const addAssetToLeksikon = async (req: Request, res: Response) => {
   try {
     const leksikonId = Number(req.params.id);
-    if (Number.isNaN(leksikonId)) return res.status(400).json({ message: 'Invalid leksikon ID' });
+    if (Number.isNaN(leksikonId)) {
+      return res.status(400).json({ message: 'Invalid leksikon ID' });
+    }
 
     const { assetId, assetRole } = req.body;
-    const validated = createLeksikonAssetSchema.parse({ leksikonId, assetId, assetRole });
 
-    const result = await leksikonService.addAssetToLeksikon(leksikonId, assetId, assetRole);
-    return res.status(201).json(result);
+    // Validasi input dengan Zod
+    const validated = createLeksikonAssetSchema.parse({
+      leksikonId,
+      assetId,
+      assetRole,
+    });
+
+    // Lakukan upsert di service agar tidak duplikat
+    const result = await leksikonService.addAssetToLeksikon(
+      validated.leksikonId,
+      validated.assetId,
+      validated.assetRole
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Asset successfully linked to leksikon',
+      data: result,
+    });
   } catch (error) {
     if (error instanceof ZodError) {
-      return res.status(400).json({ message: 'Validation failed', errors: error });
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error,
+      });
     }
+
     if ((error as any)?.code === 'LEKSIKON_NOT_FOUND') {
       return res.status(404).json({ message: 'Leksikon not found' });
     }
     if ((error as any)?.code === 'ASSET_NOT_FOUND') {
       return res.status(404).json({ message: 'Asset not found' });
     }
+
     console.error('Failed to add asset to leksikon:', error);
-    return res.status(500).json({ message: 'Failed to add asset', details: error });
+    return res.status(500).json({
+      message: 'Failed to add asset to leksikon',
+      details: error instanceof Error ? error.message : error,
+    });
   }
 };
+
 
 // DELETE /api/leksikons/:id/assets/:assetId
 export const removeAssetFromLeksikon = async (req: Request, res: Response) => {

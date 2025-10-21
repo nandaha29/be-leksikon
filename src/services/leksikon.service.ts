@@ -147,32 +147,60 @@ export const deleteLeksikon = async (id: number) => {
   });
 };
 
+// export const addAssetToLeksikon = async (leksikonId: number, assetId: number, assetRole: string) => {
+//   // verify leksikon exists
+//   const leksikon = await prisma.leksikon.findUnique({
+//     where: { leksikonId },
+//   });
+//   if (!leksikon) {
+//     const err = new Error('Leksikon not found');
+//     (err as any).code = 'LEKSIKON_NOT_FOUND';
+//     throw err;
+//   }
+
+//   // verify asset exists
+//   const asset = await prisma.asset.findUnique({
+//     where: { assetId },
+//   });
+//   if (!asset) {
+//     const err = new Error('Asset not found');
+//     (err as any).code = 'ASSET_NOT_FOUND';
+//     throw err;
+//   }
+
+//   return prisma.leksikonAsset.create({
+//     data: { leksikonId, assetId, assetRole },
+//     include: { asset: true },
+//   });
+// };
+
 export const addAssetToLeksikon = async (leksikonId: number, assetId: number, assetRole: string) => {
-  // verify leksikon exists
-  const leksikon = await prisma.leksikon.findUnique({
-    where: { leksikonId },
-  });
-  if (!leksikon) {
-    const err = new Error('Leksikon not found');
-    (err as any).code = 'LEKSIKON_NOT_FOUND';
-    throw err;
-  }
+  // Pastikan leksikon dan asset ada
+  const leksikon = await prisma.leksikon.findUnique({ where: { leksikonId } });
+  if (!leksikon) throw { code: 'LEKSIKON_NOT_FOUND' };
 
-  // verify asset exists
-  const asset = await prisma.asset.findUnique({
-    where: { assetId },
-  });
-  if (!asset) {
-    const err = new Error('Asset not found');
-    (err as any).code = 'ASSET_NOT_FOUND';
-    throw err;
-  }
+  const asset = await prisma.asset.findUnique({ where: { assetId } });
+  if (!asset) throw { code: 'ASSET_NOT_FOUND' };
 
-  return prisma.leksikonAsset.create({
-    data: { leksikonId, assetId, assetRole },
-    include: { asset: true },
+  // Gunakan upsert agar tidak duplikat dan tidak menimbulkan rekursi
+  return prisma.leksikonAsset.upsert({
+    where: {
+      leksikonId_assetId: {
+        leksikonId,
+        assetId,
+      },
+    },
+    update: {
+      assetRole,
+    },
+    create: {
+      leksikonId,
+      assetId,
+      assetRole,
+    },
   });
 };
+
 
 export const removeAssetFromLeksikon = async (leksikonId: number, assetId: number) => {
   return prisma.leksikonAsset.delete({
