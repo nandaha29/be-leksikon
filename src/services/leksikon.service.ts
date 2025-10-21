@@ -1,0 +1,228 @@
+import { prisma } from '@/lib/prisma.js';
+import { CreateLeksikonInput, UpdateLeksikonInput } from '@/lib/validators.js';
+import { Prisma } from '@prisma/client';
+
+export const getAllLeksikons = async () => {
+  return prisma.leksikon.findMany({
+    include: {
+      domainKodifikasi: true,
+      contributor: true,
+      leksikonAssets: { include: { asset: true } },
+      leksikonReferensis: { include: { referensi: true } },
+    },
+  });
+};
+
+export const getLeksikonById = async (id: number) => {
+  return prisma.leksikon.findUnique({
+    where: { leksikonId: id },
+    include: {
+      domainKodifikasi: true,
+      contributor: true,
+      leksikonAssets: { include: { asset: true } },
+      leksikonReferensis: { include: { referensi: true } },
+    },
+  });
+};
+
+export const createLeksikon = async (data: CreateLeksikonInput) => {
+  // verify domain exists
+  const domain = await prisma.domainKodifikasi.findUnique({
+    where: { domainKodifikasiId: data.domainKodifikasiId },
+  });
+  if (!domain) {
+    const err = new Error('Domain not found');
+    (err as any).code = 'DOMAIN_NOT_FOUND';
+    throw err;
+  }
+
+  // verify contributor exists
+  const contributor = await prisma.contributor.findUnique({
+    where: { contributorId: data.contributorId },
+  });
+  if (!contributor) {
+    const err = new Error('Contributor not found');
+    (err as any).code = 'CONTRIBUTOR_NOT_FOUND';
+    throw err;
+  }
+
+  try {
+    const created = await prisma.leksikon.create({
+      data: {
+        kataLeksikon: data.kataLeksikon,
+        ipa: data.ipa ?? null,
+        transliterasi: data.transliterasi ?? null,
+        maknaEtimologi: data.maknaEtimologi ?? null,
+        maknaKultural: data.maknaKultural ?? null,
+        commonMeaning: data.commonMeaning ?? null,
+        translation: data.translation ?? null,
+        varian: data.varian ?? null,
+        translationVarians: data.translationVarians ?? null,
+        deskripsiLain: data.deskripsiLain ?? null,
+        domainKodifikasiId: data.domainKodifikasiId,
+        statusPreservasi: data.statusPreservasi ?? undefined,
+        contributorId: data.contributorId,
+        status: data.status ?? undefined,
+      },
+      include: {
+        domainKodifikasi: true,
+        contributor: true,
+        leksikonAssets: { include: { asset: true } },
+        leksikonReferensis: { include: { referensi: true } },
+      },
+    });
+    return created;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // handle known Prisma errors if you add unique constraints later
+    }
+    throw error;
+  }
+};
+
+export const updateLeksikon = async (id: number, data: UpdateLeksikonInput) => {
+  // check relation updates
+  if (data.domainKodifikasiId !== undefined) {
+    const domain = await prisma.domainKodifikasi.findUnique({
+      where: { domainKodifikasiId: data.domainKodifikasiId },
+    });
+    if (!domain) {
+      const err = new Error('Domain not found');
+      (err as any).code = 'DOMAIN_NOT_FOUND';
+      throw err;
+    }
+  }
+  if (data.contributorId !== undefined) {
+    const contributor = await prisma.contributor.findUnique({
+      where: { contributorId: data.contributorId },
+    });
+    if (!contributor) {
+      const err = new Error('Contributor not found');
+      (err as any).code = 'CONTRIBUTOR_NOT_FOUND';
+      throw err;
+    }
+  }
+
+  try {
+    const updated = await prisma.leksikon.update({
+      where: { leksikonId: id },
+      data: {
+        ...(data.kataLeksikon !== undefined && { kataLeksikon: data.kataLeksikon }),
+        ...(data.ipa !== undefined && { ipa: data.ipa }),
+        ...(data.transliterasi !== undefined && { transliterasi: data.transliterasi }),
+        ...(data.maknaEtimologi !== undefined && { maknaEtimologi: data.maknaEtimologi }),
+        ...(data.maknaKultural !== undefined && { maknaKultural: data.maknaKultural }),
+        ...(data.commonMeaning !== undefined && { commonMeaning: data.commonMeaning }),
+        ...(data.translation !== undefined && { translation: data.translation }),
+        ...(data.varian !== undefined && { varian: data.varian }),
+        ...(data.translationVarians !== undefined && { translationVarians: data.translationVarians }),
+        ...(data.deskripsiLain !== undefined && { deskripsiLain: data.deskripsiLain }),
+        ...(data.domainKodifikasiId !== undefined && { domainKodifikasiId: data.domainKodifikasiId }),
+        ...(data.statusPreservasi !== undefined && { statusPreservasi: data.statusPreservasi }),
+        ...(data.contributorId !== undefined && { contributorId: data.contributorId }),
+        ...(data.status !== undefined && { status: data.status }),
+      },
+      include: {
+        domainKodifikasi: true,
+        contributor: true,
+        leksikonAssets: { include: { asset: true } },
+        leksikonReferensis: { include: { referensi: true } },
+      },
+    });
+    return updated;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // P2025: record to update not found
+      if (error.code === 'P2025') {
+        throw error; // bubble to controller to map to 404
+      }
+    }
+    throw error;
+  }
+};
+
+export const deleteLeksikon = async (id: number) => {
+  return prisma.leksikon.delete({
+    where: { leksikonId: id },
+  });
+};
+
+export const addAssetToLeksikon = async (leksikonId: number, assetId: number, assetRole: string) => {
+  // verify leksikon exists
+  const leksikon = await prisma.leksikon.findUnique({
+    where: { leksikonId },
+  });
+  if (!leksikon) {
+    const err = new Error('Leksikon not found');
+    (err as any).code = 'LEKSIKON_NOT_FOUND';
+    throw err;
+  }
+
+  // verify asset exists
+  const asset = await prisma.asset.findUnique({
+    where: { assetId },
+  });
+  if (!asset) {
+    const err = new Error('Asset not found');
+    (err as any).code = 'ASSET_NOT_FOUND';
+    throw err;
+  }
+
+  return prisma.leksikonAsset.create({
+    data: { leksikonId, assetId, assetRole },
+    include: { asset: true },
+  });
+};
+
+export const removeAssetFromLeksikon = async (leksikonId: number, assetId: number) => {
+  return prisma.leksikonAsset.delete({
+    where: { leksikonId_assetId: { leksikonId, assetId } },
+  });
+};
+
+export const getLeksikonAssets = async (id: number) => {
+  return prisma.leksikonAsset.findMany({
+    where: { leksikonId: id },
+    include: { asset: true },
+  });
+};
+
+export const addReferenceToLeksikon = async (leksikonId: number, referensiId: number, citationNote?: string) => {
+  // verify leksikon exists
+  const leksikon = await prisma.leksikon.findUnique({
+    where: { leksikonId },
+  });
+  if (!leksikon) {
+    const err = new Error('Leksikon not found');
+    (err as any).code = 'LEKSIKON_NOT_FOUND';
+    throw err;
+  }
+
+  // verify referensi exists
+  const referensi = await prisma.referensi.findUnique({
+    where: { referensiId },
+  });
+  if (!referensi) {
+    const err = new Error('Referensi not found');
+    (err as any).code = 'REFERENSI_NOT_FOUND';
+    throw err;
+  }
+
+  return prisma.leksikonReferensi.create({
+    data: { leksikonId, referensiId, citationNote },
+    include: { referensi: true },
+  });
+};
+
+export const removeReferenceFromLeksikon = async (leksikonId: number, referensiId: number) => {
+  return prisma.leksikonReferensi.delete({
+    where: { leksikonId_referensiId: { leksikonId, referensiId } },
+  });
+};
+
+export const getLeksikonReferences = async (id: number) => {
+  return prisma.leksikonReferensi.findMany({
+    where: { leksikonId: id },
+    include: { referensi: true },
+  });
+};

@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Culture {
+  cultureId        Int              @id @default(autoincrement()) @map("culture_id")
+  namaBudaya       String           @map("nama_budaya")
+  pulauAsal        String           @map("pulau_asal")
+  provinsi         String           @map("provinsi")
+  kotaDaerah       String           @map("kota_daerah")
+  klasifikasi      String?
+  karakteristik    String?
+  statusKonservasi StatusKonservasi @default(TREATENED) @map("status_konservasi")
+  latitude         Float?
+  longitude        Float?
+  status           StatusPublish    @default(DRAFT) @map("status")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  subcultures      Subculture[]
+
+  @@map("CULTURE")
+}
+
+model Subculture {
+  subcultureId      Int                @id @default(autoincrement()) @map("subculture_id")
+  namaSubculture    String             @map("nama_subkultur")
+  penjelasan        String
+  cultureId         Int                @map("culture_id")
+  status            StatusPublish      @default(DRAFT) @map("status")
+  statusKonservasi  StatusKonservasi   @default(TREATENED) @map("status_konservasi")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  domainKodifikasis DomainKodifikasi[]
+  culture           Culture            @relation(fields: [cultureId], references: [cultureId])
+  subcultureAssets  SubcultureAsset[]
+
+  @@map("SUBCULTURE")
+}
+
+model DomainKodifikasi {
+  domainKodifikasiId Int           @id @default(autoincrement()) @map("dk_id")
+  kode               String
+  namaDomain         String        @map("nama_domain")
+  penjelasan         String
+  subcultureId       Int           @map("subculture_id")
+  status             StatusPublish @default(DRAFT) @map("status")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  subculture         Subculture    @relation(fields: [subcultureId], references: [subcultureId])
+  leksikons          Leksikon[]
+
+  @@map("DOMAIN_KODIFIKASI")
+}
+
+model Leksikon {
+  leksikonId         Int                 @id @default(autoincrement()) @map("leksikon_id")
+  kataLeksikon       String              @map("kata_leksikon")
+  ipa                String              @map("ipa_international_phonetic_alphabet")
+  transliterasi      String
+  maknaEtimologi     String              @map("makna_etimologi")
+  maknaKultural      String              @map("makna_kultural")
+  commonMeaning      String              @map("common_meaning")
+  translation        String
+  varian             String?
+  translationVarians String?             @map("translation_varians")
+  deskripsiLain      String?             @map("deskripsi_lain")
+  domainKodifikasiId Int                 @map("dk_id")
+  statusPreservasi   StatusKonservasi    @default(MAINTAINED) @map("status_preservasi")
+  contributorId      Int                 @map("contributor_id")
+  status             StatusPublish       @default(DRAFT) @map("status")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  contributor        Contributor         @relation(fields: [contributorId], references: [contributorId])
+  domainKodifikasi   DomainKodifikasi    @relation(fields: [domainKodifikasiId], references: [domainKodifikasiId])
+  leksikonAssets     LeksikonAsset[]
+  leksikonReferensis LeksikonReferensi[]
+
+  @@map("LEKSIKON")
+}
+
+model Contributor {
+  contributorId   Int        @id @default(autoincrement()) @map("contributor_id")
+  namaContributor String     @map("nama_contributor")
+  institusi       String
+  email           String
+  expertiseArea   String     @map("expertise_area")
+  contactInfo     String     @map("contact_info")
+  registeredAt    DateTime   @default(now()) @map("registered_at")
+  leksikons       Leksikon[]
+
+  @@map("CONTRIBUTOR")
+}
+
+model Asset {
+  assetId          Int               @id @default(autoincrement()) @map("asset_id")
+  namaFile         String            @map("nama_file")
+  tipe             AssetType         @map("tipe")
+  penjelasan       String?           @map("penjelasan")
+  url              String            @map("url")
+  fileSize         String?           @map("file_size")
+  hashChecksum     String?           @map("hash_checksum")
+  metadataJson     String?           @map("metadata_json")
+  status           StatusFile        @default(ARCHIVED) @map("status")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  leksikonAssets   LeksikonAsset[]
+  subcultureAssets SubcultureAsset[]
+
+  @@map("ASSET")
+}
+
+model Referensi {
+  referensiId       Int                 @id @default(autoincrement()) @map("referensi_id")
+  judul             String
+  tipeReferensi     TipeReferensi       @map("tipe_referensi")
+  penjelasan        String?
+  url               String?
+  penulis           String?
+  tahunTerbit       String?             @map("tahun_terbit")
+  status            StatusPublish       @default(DRAFT)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  leksikonReferensi LeksikonReferensi[]
+
+  @@map("REFERENSI")
+}
+
+model LeksikonAsset {
+  leksikonId Int      @map("leksikon_id")
+  assetId    Int      @map("asset_id")
+  assetRole  String   @map("asset_role")
+  createdAt  DateTime @default(now()) @map("created_at")
+  asset      Asset    @relation(fields: [assetId], references: [assetId])
+  leksikon   Leksikon @relation(fields: [leksikonId], references: [leksikonId])
+
+  @@id([leksikonId, assetId])
+  @@map("LEKSIKON_ASSETS")
+}
+
+model SubcultureAsset {
+  subcultureId Int        @map("subculture_id")
+  assetId      Int        @map("asset_id")
+  assetRole    String     @map("asset_role")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  asset        Asset      @relation(fields: [assetId], references: [assetId])
+  subculture   Subculture @relation(fields: [subcultureId], references: [subcultureId])
+
+  @@id([subcultureId, assetId])
+  @@map("SUBCULTURE_ASSETS")
+}
+
+model LeksikonReferensi {
+  leksikonId   Int       @map("leksikon_id")
+  referensiId  Int       @map("referensi_id")
+  citationNote String?   @map("citation_note")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  leksikon     Leksikon  @relation(fields: [leksikonId], references: [leksikonId])
+  referensi    Referensi @relation(fields: [referensiId], references: [referensiId])
+
+  @@id([leksikonId, referensiId])
+  @@map("LEKSIKON_REFERENSI")
+}
+
+enum TipeReferensi {
+  JURNAL
+  BUKU
+  ARTIKEL
+  WEBSITE
+  LAPORAN
+}
+
+enum AssetType {
+  FOTO
+  AUDIO
+  VIDEO
+  MODEL_3D
+}
+
+enum StatusPublish {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum StatusFile {
+  ACTIVE
+  PROCESSING
+  ARCHIVED
+  CORRUPTED
+}
+
+enum StatusKonservasi {
+  MAINTAINED
+  TREATENED
+  CRITICAL
+  ARCHIVED
+}
