@@ -224,19 +224,62 @@ export const getLeksikonReferences = async (req: Request, res: Response) => {
 };
 
 // POST /api/leksikons/:id/references
+// export const addReferenceToLeksikon = async (req: Request, res: Response) => {
+//   try {
+//     const leksikonId = Number(req.params.id);
+//     if (Number.isNaN(leksikonId)) return res.status(400).json({ message: 'Invalid leksikon ID' });
+
+//     const { referensiId, citationNote } = req.body;
+//     const validated = createLeksikonReferensiSchema.parse({ leksikonId, referensiId, citationNote });
+
+//     const result = await leksikonService.addReferenceToLeksikon(leksikonId, referensiId, citationNote);
+//     return res.status(201).json(result);
+//   } catch (error) {
+//     if (error instanceof ZodError) {
+//       return res.status(400).json({ message: 'Validation failed', errors: error });
+//     }
+//     if ((error as any)?.code === 'LEKSIKON_NOT_FOUND') {
+//       return res.status(404).json({ message: 'Leksikon not found' });
+//     }
+//     if ((error as any)?.code === 'REFERENSI_NOT_FOUND') {
+//       return res.status(404).json({ message: 'Referensi not found' });
+//     }
+//     console.error('Failed to add reference to leksikon:', error);
+//     return res.status(500).json({ message: 'Failed to add reference', details: error });
+//   }
+// };
+
+// POST /api/leksikons/:id/references
 export const addReferenceToLeksikon = async (req: Request, res: Response) => {
   try {
     const leksikonId = Number(req.params.id);
-    if (Number.isNaN(leksikonId)) return res.status(400).json({ message: 'Invalid leksikon ID' });
+    if (Number.isNaN(leksikonId))
+      return res.status(400).json({ message: 'Invalid leksikon ID' });
 
     const { referensiId, citationNote } = req.body;
-    const validated = createLeksikonReferensiSchema.parse({ leksikonId, referensiId, citationNote });
+    const validated = createLeksikonReferensiSchema.parse({
+      leksikonId,
+      referensiId,
+      citationNote,
+    });
 
-    const result = await leksikonService.addReferenceToLeksikon(leksikonId, referensiId, citationNote);
-    return res.status(201).json(result);
+    const result = await leksikonService.addReferenceToLeksikon(
+      validated.leksikonId,
+      validated.referensiId,
+      validated.citationNote
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Reference successfully linked to leksikon',
+      data: result,
+    });
   } catch (error) {
     if (error instanceof ZodError) {
-      return res.status(400).json({ message: 'Validation failed', errors: error });
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: error,
+      });
     }
     if ((error as any)?.code === 'LEKSIKON_NOT_FOUND') {
       return res.status(404).json({ message: 'Leksikon not found' });
@@ -244,10 +287,15 @@ export const addReferenceToLeksikon = async (req: Request, res: Response) => {
     if ((error as any)?.code === 'REFERENSI_NOT_FOUND') {
       return res.status(404).json({ message: 'Referensi not found' });
     }
+
     console.error('Failed to add reference to leksikon:', error);
-    return res.status(500).json({ message: 'Failed to add reference', details: error });
+    return res.status(500).json({
+      message: 'Failed to add reference to leksikon',
+      details: error instanceof Error ? error.message : error,
+    });
   }
 };
+
 
 // DELETE /api/leksikons/:id/references/:referenceId
 export const removeReferenceFromLeksikon = async (req: Request, res: Response) => {

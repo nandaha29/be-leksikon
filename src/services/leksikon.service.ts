@@ -215,32 +215,59 @@ export const getLeksikonAssets = async (id: number) => {
   });
 };
 
-export const addReferenceToLeksikon = async (leksikonId: number, referensiId: number, citationNote?: string) => {
-  // verify leksikon exists
-  const leksikon = await prisma.leksikon.findUnique({
-    where: { leksikonId },
-  });
-  if (!leksikon) {
-    const err = new Error('Leksikon not found');
-    (err as any).code = 'LEKSIKON_NOT_FOUND';
-    throw err;
-  }
+// export const addReferenceToLeksikon = async (leksikonId: number, referensiId: number, citationNote?: string) => {
+//   // verify leksikon exists
+//   const leksikon = await prisma.leksikon.findUnique({
+//     where: { leksikonId },
+//   });
+//   if (!leksikon) {
+//     const err = new Error('Leksikon not found');
+//     (err as any).code = 'LEKSIKON_NOT_FOUND';
+//     throw err;
+//   }
 
-  // verify referensi exists
-  const referensi = await prisma.referensi.findUnique({
-    where: { referensiId },
-  });
-  if (!referensi) {
-    const err = new Error('Referensi not found');
-    (err as any).code = 'REFERENSI_NOT_FOUND';
-    throw err;
-  }
+//   // verify referensi exists
+//   const referensi = await prisma.referensi.findUnique({
+//     where: { referensiId },
+//   });
+//   if (!referensi) {
+//     const err = new Error('Referensi not found');
+//     (err as any).code = 'REFERENSI_NOT_FOUND';
+//     throw err;
+//   }
 
-  return prisma.leksikonReferensi.create({
-    data: { leksikonId, referensiId, citationNote },
-    include: { referensi: true },
+//   return prisma.leksikonReferensi.create({
+//     data: { leksikonId, referensiId, citationNote },
+//     include: { referensi: true },
+//   });
+// };
+
+export const addReferenceToLeksikon = async  (leksikonId: number, referensiId: number, citationNote?: string) => {
+  const leksikon = await prisma.leksikon.findUnique({ where: { leksikonId } });
+  if (!leksikon) throw { code: 'LEKSIKON_NOT_FOUND' };
+
+  const referensi = await prisma.referensi.findUnique({ where: { referensiId } });
+  if (!referensi) throw { code: 'REFERENSI_NOT_FOUND' };
+
+  // Gunakan upsert agar tidak duplikat
+  return prisma.leksikonReferensi.upsert({
+    where: {
+      leksikonId_referensiId: {
+        leksikonId,
+        referensiId,
+      },
+    },
+    update: {
+      citationNote,
+    },
+    create: {
+      leksikonId,
+      referensiId,
+      citationNote,
+    },
   });
 };
+
 
 export const removeReferenceFromLeksikon = async (leksikonId: number, referensiId: number) => {
   return prisma.leksikonReferensi.delete({
