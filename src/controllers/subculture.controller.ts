@@ -3,6 +3,7 @@ import * as subcultureService from "../services/subculture.service.js";
 import { createSubcultureSchema, updateSubcultureSchema, createSubcultureAssetSchema } from "@/lib/validators.js";
 import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
+import { de } from "zod/locales";
 
 export const getAllSubcultures = async (req: Request, res: Response) => {
   try {
@@ -99,7 +100,7 @@ export const addAssetToSubculture = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Asset not found' });
     }
     console.error('Failed to add asset to subculture:', error);
-    return res.status(500).json({ message: 'Failed to add asset' });
+    return res.status(500).json({ message: 'Failed to add asset', details: error });
   }
 };
 

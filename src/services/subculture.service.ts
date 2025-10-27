@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { CreateSubcultureInput, UpdateSubcultureInput } from "@/lib/validators.js";
 
 const prisma = new PrismaClient();
@@ -47,9 +47,7 @@ export const deleteSubculture = async (id: number) => {
 
 export const addAssetToSubculture = async (subcultureId: number, assetId: number, assetRole: string) => {
   // verify subculture exists
-  const subculture = await prisma.subculture.findUnique({
-    where: { subcultureId },
-  });
+  const subculture = await prisma.subculture.findUnique({ where: { subcultureId } });
   if (!subculture) {
     const err = new Error('Subculture not found');
     (err as any).code = 'SUBCULTURE_NOT_FOUND';
@@ -57,26 +55,40 @@ export const addAssetToSubculture = async (subcultureId: number, assetId: number
   }
 
   // verify asset exists
-  const asset = await prisma.asset.findUnique({
-    where: { assetId },
-  });
+  const asset = await prisma.asset.findUnique({ where: { assetId } });
   if (!asset) {
     const err = new Error('Asset not found');
     (err as any).code = 'ASSET_NOT_FOUND';
     throw err;
   }
 
-  return prisma.subcultureAsset.create({
-    data: { subcultureId, assetId, assetRole },
+  // ✅ pakai upsert biar tidak error P2002
+  return prisma.subcultureAsset.upsert({
+    where: {
+      subcultureId_assetId: { subcultureId, assetId },
+    },
+    update: { assetRole },
+    create: { subcultureId, assetId, assetRole },
     include: { asset: true },
   });
 };
 
+
 export const removeAssetFromSubculture = async (subcultureId: number, assetId: number) => {
-  return prisma.subcultureAsset.delete({
-    where: { subcultureId_assetId: { subcultureId, assetId } },
-  });
+  try {
+    return await prisma.subcultureAsset.delete({
+      where: { subcultureId_assetId: { subcultureId, assetId } },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      const err = new Error('Association not found');
+      (err as any).code = 'ASSOCIATION_NOT_FOUND';
+      throw err;
+    }
+    throw error;
+  }
 };
+
 
 export const getSubcultureAssets = async (id: number) => {
   return prisma.subcultureAsset.findMany({
