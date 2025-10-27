@@ -96,3 +96,34 @@ export const getSubcultureAssets = async (id: number) => {
     include: { asset: true },
   });
 };
+
+export const getAllSubculturesPaginated = async (skip: number, limit: number) => {
+  const [subcultures, total] = await Promise.all([
+    prisma.subculture.findMany({
+      skip,
+      take: limit,
+      include: {
+        culture: true,
+        domainKodifikasis: true,
+        subcultureAssets: { include: { asset: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.subculture.count(),
+  ]);
+
+  return { subcultures, total };
+};
+
+export const getSubculturesByCulture = async (cultureId: number) => {
+  return prisma.subculture.findMany({
+    where: { cultureId },
+    include: {
+      culture: true,
+      domainKodifikasis: true,
+      subcultureAssets: { include: { asset: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+

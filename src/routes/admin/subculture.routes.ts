@@ -3,7 +3,7 @@ import * as subcultureController from "../../controllers/subculture.controller.j
 
 const router = express.Router();
 
-router.get("/", subcultureController.getAllSubcultures);
+router.get("/", subcultureController.getAllSubculturesPaginated);
 router.get("/:id", subcultureController.getSubcultureById);
 router.post("/", subcultureController.createSubculture);
 router.put("/:id", subcultureController.updateSubculture);
@@ -17,5 +17,9 @@ router
 router
   .route('/:id/assets/:assetId')
   .delete(subcultureController.removeAssetFromSubculture);
+
+  // 🔹 Tambahkan route baru ini
+// router.get("/culture/:culture_id/subcultures", subcultureController.getSubculturesByCulture);
+router.get("/:cultureId/subcultures", subcultureController.getSubculturesByCulture);
 
 export default router;

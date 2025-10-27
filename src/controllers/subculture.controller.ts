@@ -5,14 +5,14 @@ import { ZodError } from "zod";
 import { Prisma } from "@prisma/client";
 import { de } from "zod/locales";
 
-export const getAllSubcultures = async (req: Request, res: Response) => {
-  try {
-    const subcultures = await subcultureService.getAllSubcultures();
-    res.json(subcultures);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch subcultures" });
-  }
-};
+// export const getAllSubcultures = async (req: Request, res: Response) => {
+//   try {
+//     const subcultures = await subcultureService.getAllSubcultures();
+//     res.json(subcultures);
+//   } catch (error) {
+//     res.status(500).json({ error: "Failed to fetch subcultures" });
+//   }
+// };
 
 export const getSubcultureById = async (req: Request, res: Response) => {
   try {
@@ -119,5 +119,51 @@ export const removeAssetFromSubculture = async (req: Request, res: Response) => 
     }
     console.error('Failed to remove asset from subculture:', error);
     return res.status(500).json({ message: 'Failed to remove asset' });
+  }
+};
+
+// GET /api/v1/subcultures?page=1&limit=10
+export const getAllSubculturesPaginated = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const { subcultures, total } = await subcultureService.getAllSubculturesPaginated(skip, limit);
+
+    res.status(200).json({
+      status: "success",
+      page,
+      limit,
+      total,
+      data: subcultures,
+    });
+  } catch (error) {
+    console.error("Error fetching paginated subcultures:", error);
+    res.status(500).json({ error: "Failed to fetch subcultures (paginated)" });
+  }
+};
+
+// GET /api/v1/cultures/:culture_id/subcultures
+export const getSubculturesByCulture = async (req: Request, res: Response) => {
+  try {
+    // Accept either `culture_id` (snake_case) or `cultureId` (camelCase) depending on route
+    const raw = req.params.culture_id ?? req.params.cultureId ?? req.params.cultureId;
+    const cultureId = Number(raw);
+    if (Number.isNaN(cultureId)) return res.status(400).json({ error: "Invalid culture_id" });
+
+    const subcultures = await subcultureService.getSubculturesByCulture(cultureId);
+
+    if (!subcultures || subcultures.length === 0) {
+      return res.status(404).json({ message: "No subcultures found for this culture" });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: subcultures,
+    });
+  } catch (error) {
+    console.error("Error fetching subcultures by culture:", error);
+    res.status(500).json({ error: "Failed to fetch subcultures by culture" });
   }
 };

@@ -33,6 +33,8 @@ app.use('/api/v1/assets', assetRoutes);
 app.use("/api/v1/subcultures", subcultureRoutes);
 app.use("/api/v1/domain-kodifikasi", domainKodifikasiRoutes);
 app.use('/api/v1/leksikons', leksikonRoutes);
+app.use("/api/v1/cultures", subcultureRoutes);
+
 
 app.listen(port, () => {
   console.log(`[server]: Server is running at http://localhost:${port}`);
