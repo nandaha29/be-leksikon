@@ -5,7 +5,7 @@ const router = Router();
 
 router
   .route('/')
-  .get(leksikonController.getLeksikons)
+  .get(leksikonController.getAllLeksikonsPaginated)
   .post(leksikonController.createLeksikon);
 
 router
@@ -37,6 +37,12 @@ router.put('/:id/assets/:assetId', leksikonController.updateAssetRole);
 
 // Citation note update
 router.put('/:id/references/:referenceId', leksikonController.updateCitationNote);
+
+// Admin Leksikon Management
+// router.get("/", leksikonController.getAllLeksikonsPaginated);
+router.get("/status", leksikonController.getLeksikonsByStatus);
+router.get("/domain-kodifikasi/:dk_id/leksikons", leksikonController.getLeksikonsByDomain);
+router.patch("/:id/status", leksikonController.updateLeksikonStatus);
 
 
 export default router;

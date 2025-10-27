@@ -320,3 +320,82 @@ export const updateCitationNote = async (
     include: { referensi: true },
   });
 };
+
+export const getAllLeksikonsPaginated = async (page = 1, limit = 20) => {
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    prisma.leksikon.findMany({
+      skip,
+      take: limit,
+      include: {
+        domainKodifikasi: true,
+        contributor: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.leksikon.count(),
+  ]);
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+export const getLeksikonsByDomain = async (domainKodifikasiId: number) => {
+  return prisma.leksikon.findMany({
+    where: { domainKodifikasiId },
+    include: {
+      contributor: true,
+    },
+  });
+};
+
+export const getLeksikonsByStatus = async (status?: string) => {
+  // If no status provided, return all leksikons
+  if (!status) {
+    return prisma.leksikon.findMany({
+      include: {
+        domainKodifikasi: true,
+        contributor: true,
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
+  // Normalize and validate status (handle lowercase query params)
+  const normalized = String(status).toUpperCase();
+  const allowed = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+  if (!allowed.includes(normalized)) {
+    // Return empty array for unknown status to be forgiving for clients
+    return [];
+  }
+
+  return prisma.leksikon.findMany({
+    where: { status: normalized as any },
+    include: {
+      domainKodifikasi: true,
+      contributor: true,
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+};
+
+export const updateLeksikonStatus = async (id: number, status: string) => {
+  const normalized = String(status).toUpperCase();
+  const allowed = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+  if (!allowed.includes(normalized)) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  return prisma.leksikon.update({
+    where: { leksikonId: id },
+    data: { status: normalized as any },
+  });
+};
