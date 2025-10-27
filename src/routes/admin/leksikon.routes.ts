@@ -32,4 +32,11 @@ router
   .route('/:id/references/:referenceId')
   .delete(leksikonController.removeReferenceFromLeksikon);
 
+  // Asset role update
+router.put('/:id/assets/:assetId', leksikonController.updateAssetRole);
+
+// Citation note update
+router.put('/:id/references/:referenceId', leksikonController.updateCitationNote);
+
+
 export default router;

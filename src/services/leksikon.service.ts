@@ -281,3 +281,42 @@ export const getLeksikonReferences = async (id: number) => {
     include: { referensi: true },
   });
 };
+
+// UPDATE assetRole di relasi leksikonAsset
+export const updateAssetRole = async (
+  leksikonId: number,
+  assetId: number,
+  assetRole: string
+) => {
+  // Pastikan relasi ada
+  const existing = await prisma.leksikonAsset.findUnique({
+    where: { leksikonId_assetId: { leksikonId, assetId } },
+  });
+
+  if (!existing) throw { code: 'ASSOCIATION_NOT_FOUND' };
+
+  return prisma.leksikonAsset.update({
+    where: { leksikonId_assetId: { leksikonId, assetId } },
+    data: { assetRole },
+    include: { asset: true },
+  });
+};
+
+// UPDATE citationNote di relasi leksikonReferensi
+export const updateCitationNote = async (
+  leksikonId: number,
+  referensiId: number,
+  citationNote?: string
+) => {
+  const existing = await prisma.leksikonReferensi.findUnique({
+    where: { leksikonId_referensiId: { leksikonId, referensiId } },
+  });
+
+  if (!existing) throw { code: 'ASSOCIATION_NOT_FOUND' };
+
+  return prisma.leksikonReferensi.update({
+    where: { leksikonId_referensiId: { leksikonId, referensiId } },
+    data: { citationNote },
+    include: { referensi: true },
+  });
+};

@@ -1,5 +1,5 @@
 import express from "express";
-import * as subcultureController from "../controllers/subculture.controller.js";
+import * as subcultureController from "../../controllers/subculture.controller.js";
 
 const router = express.Router();
 

@@ -314,3 +314,70 @@ export const removeReferenceFromLeksikon = async (req: Request, res: Response) =
     return res.status(500).json({ message: 'Failed to remove reference', details: error });
   }
 };
+
+// PUT /api/v1/leksikons/:id/assets/:assetId
+export const updateAssetRole = async (req: Request, res: Response) => {
+  try {
+    const leksikonId = Number(req.params.id);
+    const assetId = Number(req.params.assetId);
+    const { assetRole } = req.body;
+
+    if (Number.isNaN(leksikonId) || Number.isNaN(assetId))
+      return res.status(400).json({ message: 'Invalid IDs' });
+
+    if (!assetRole)
+      return res.status(400).json({ message: 'assetRole is required' });
+
+    const result = await leksikonService.updateAssetRole(
+      leksikonId,
+      assetId,
+      assetRole
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Asset role updated successfully',
+      data: result,
+    });
+  } catch (error) {
+    if ((error as any)?.code === 'ASSOCIATION_NOT_FOUND')
+      return res.status(404).json({ message: 'Asset relation not found' });
+
+    console.error('Failed to update asset role:', error);
+    return res
+      .status(500)
+      .json({ message: 'Failed to update asset role', details: error });
+  }
+};
+
+// PUT /api/v1/leksikons/:id/references/:referenceId
+export const updateCitationNote = async (req: Request, res: Response) => {
+  try {
+    const leksikonId = Number(req.params.id);
+    const referensiId = Number(req.params.referenceId);
+    const { citationNote } = req.body;
+
+    if (Number.isNaN(leksikonId) || Number.isNaN(referensiId))
+      return res.status(400).json({ message: 'Invalid IDs' });
+
+    const result = await leksikonService.updateCitationNote(
+      leksikonId,
+      referensiId,
+      citationNote
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Citation note updated successfully',
+      data: result,
+    });
+  } catch (error) {
+    if ((error as any)?.code === 'ASSOCIATION_NOT_FOUND')
+      return res.status(404).json({ message: 'Reference relation not found' });
+
+    console.error('Failed to update citation note:', error);
+    return res
+      .status(500)
+      .json({ message: 'Failed to update citation note', details: error });
+  }
+};

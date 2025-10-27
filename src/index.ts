@@ -1,13 +1,13 @@
 import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import cultureRoutes from './routes/culture.routes.js'; 
-import contributorRoutes from '@/routes/contributor.routes.js';
-import referensiRoutes from '@/routes/reference.routes.js';
-import assetRoutes from '@/routes/asset.routes.js';
-import subcultureRoutes from './routes/subculture.routes.js';
-import domainKodifikasiRoutes from './routes/domainKodifikasi.routes.js';
-import leksikonRoutes from '@/routes/leksikon.routes.js';
+import cultureRoutes from './routes/admin/culture.routes.js'; 
+import contributorRoutes from '@/routes/admin/contributor.routes.js';
+import referensiRoutes from '@/routes/admin/reference.routes.js';
+import assetRoutes from '@/routes/admin/asset.routes.js';
+import subcultureRoutes from './routes/admin/subculture.routes.js';
+import domainKodifikasiRoutes from './routes/admin/domainKodifikasi.routes.js';
+import leksikonRoutes from '@/routes/admin/leksikon.routes.js';
 
 // Load environment variables from .env file
 dotenv.config();
